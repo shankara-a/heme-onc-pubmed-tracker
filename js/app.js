@@ -3,6 +3,10 @@
 const EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/";
 const RETMAX = 60;
 
+const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
+const CLAUDE_MODEL = "claude-haiku-4-5-20251001";
+const SUMMARY_HOVER_DELAY = 500;
+
 const MONTH_MAP = {
   jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
   jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12
@@ -18,6 +22,10 @@ let state = {
 };
 
 let currentArticles = [];
+
+const summaryCache = new Map();
+let summaryHoverTimer = null;
+let summaryRequestToken = 0;
 
 const els = {};
 
@@ -37,9 +45,11 @@ function cacheElements() {
   els.sortSelect = document.getElementById("sort-select");
   els.institutionInput = document.getElementById("institution-input");
   els.apiKeyInput = document.getElementById("api-key-input");
+  els.claudeKeyInput = document.getElementById("claude-key-input");
   els.searchBtn = document.getElementById("search-btn");
   els.status = document.getElementById("status");
   els.results = document.getElementById("results");
+  els.summaryPanel = document.getElementById("summary-panel");
 }
 
 function bindEvents() {
@@ -88,6 +98,10 @@ function bindEvents() {
     saveSettingsToStorage();
   });
 
+  els.claudeKeyInput.addEventListener("change", () => {
+    saveSettingsToStorage();
+  });
+
   els.searchBtn.addEventListener("click", runSearch);
 }
 
@@ -116,6 +130,9 @@ function loadSettingsFromStorage() {
     if (saved.apiKey) {
       els.apiKeyInput.value = saved.apiKey;
     }
+    if (saved.claudeApiKey) {
+      els.claudeKeyInput.value = saved.claudeApiKey;
+    }
   } catch (e) {
     /* ignore corrupt storage */
   }
@@ -126,7 +143,8 @@ function saveSettingsToStorage() {
     "hemeOncTrackerSettings",
     JSON.stringify({
       institution: els.institutionInput.value.trim(),
-      apiKey: els.apiKeyInput.value.trim()
+      apiKey: els.apiKeyInput.value.trim(),
+      claudeApiKey: els.claudeKeyInput.value.trim()
     })
   );
 }
@@ -153,6 +171,7 @@ async function runSearch() {
   setStatus("Searching PubMed...", "loading");
   els.results.innerHTML = "";
   els.searchBtn.disabled = true;
+  resetSummaryPanel();
 
   try {
     const term = buildSearchTerm();
@@ -380,8 +399,116 @@ function renderArticles() {
       ` : ""}
     `;
 
+    card.addEventListener("mouseenter", () => {
+      clearTimeout(summaryHoverTimer);
+      summaryHoverTimer = setTimeout(() => showSummary(article), SUMMARY_HOVER_DELAY);
+    });
+    card.addEventListener("mouseleave", () => {
+      clearTimeout(summaryHoverTimer);
+    });
+
     fragment.appendChild(card);
   });
 
   els.results.appendChild(fragment);
+}
+
+function resetSummaryPanel() {
+  clearTimeout(summaryHoverTimer);
+  els.summaryPanel.innerHTML =
+    '<p class="summary-placeholder">Hover over a publication to see an AI-generated summary.</p>';
+}
+
+async function showSummary(article) {
+  const apiKey = els.claudeKeyInput.value.trim();
+  if (!apiKey) {
+    renderSummaryPanel(article, { state: "no-key" });
+    return;
+  }
+
+  if (summaryCache.has(article.pmid)) {
+    renderSummaryPanel(article, { state: "ready", text: summaryCache.get(article.pmid) });
+    return;
+  }
+
+  const requestToken = ++summaryRequestToken;
+  renderSummaryPanel(article, { state: "loading" });
+
+  try {
+    const summary = await fetchClaudeSummary(article, apiKey);
+    summaryCache.set(article.pmid, summary);
+    if (requestToken === summaryRequestToken) {
+      renderSummaryPanel(article, { state: "ready", text: summary });
+    }
+  } catch (err) {
+    console.error(err);
+    if (requestToken === summaryRequestToken) {
+      renderSummaryPanel(article, { state: "error", message: err.message });
+    }
+  }
+}
+
+async function fetchClaudeSummary(article, apiKey) {
+  const abstractText = article.abstract || "(No abstract available - summarize based on the title alone.)";
+  const prompt =
+    "Summarize this paper for a hematology/oncology clinician quickly scanning recent literature. " +
+    'Respond with 2-3 short markdown bullet points (each starting with "- ") covering the key finding(s) ' +
+    "and clinical relevance. Output only the bullet points, no preamble or closing remarks.\n\n" +
+    `Title: ${article.title}\nJournal: ${article.journal}\nAbstract: ${abstractText}`;
+
+  const resp = await fetch(CLAUDE_API_URL, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: 300,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => null);
+    throw new Error(body?.error?.message || `HTTP ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  const text = data?.content?.[0]?.text?.trim();
+  return text || "(No summary returned.)";
+}
+
+function renderSummaryPanel(article, status) {
+  const titleHtml = `<h3>${escapeHtml(article.title)}</h3>`;
+
+  if (status.state === "no-key") {
+    els.summaryPanel.innerHTML =
+      titleHtml + '<p class="summary-loading">Add a Claude API key in the sidebar to enable AI summaries.</p>';
+    return;
+  }
+
+  if (status.state === "loading") {
+    els.summaryPanel.innerHTML = titleHtml + '<p class="summary-loading">Generating summary...</p>';
+    return;
+  }
+
+  if (status.state === "error") {
+    els.summaryPanel.innerHTML =
+      titleHtml + `<p class="summary-error">Couldn't generate summary: ${escapeHtml(status.message)}</p>`;
+    return;
+  }
+
+  const bullets = status.text
+    .split("\n")
+    .map((line) => line.replace(/^[\s*-]+/, "").trim())
+    .filter(Boolean);
+
+  const bodyHtml = bullets.length
+    ? `<ul>${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`
+    : `<p>${escapeHtml(status.text)}</p>`;
+
+  els.summaryPanel.innerHTML = titleHtml + bodyHtml;
 }
