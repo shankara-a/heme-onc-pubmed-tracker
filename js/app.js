@@ -438,28 +438,28 @@ function resetSummaryPanel() {
 async function showSummary(article) {
   const apiKey = els.claudeKeyInput.value.trim();
   if (!apiKey) {
-    renderSummaryPanel(article, { state: "no-key" });
+    renderSummaryPanel({ state: "no-key" });
     return;
   }
 
   if (summaryCache.has(article.pmid)) {
-    renderSummaryPanel(article, { state: "ready", text: summaryCache.get(article.pmid) });
+    renderSummaryPanel({ state: "ready", text: summaryCache.get(article.pmid) });
     return;
   }
 
   const requestToken = ++summaryRequestToken;
-  renderSummaryPanel(article, { state: "loading" });
+  renderSummaryPanel({ state: "loading" });
 
   try {
     const summary = await fetchClaudeSummary(article, apiKey);
     summaryCache.set(article.pmid, summary);
     if (requestToken === summaryRequestToken) {
-      renderSummaryPanel(article, { state: "ready", text: summary });
+      renderSummaryPanel({ state: "ready", text: summary });
     }
   } catch (err) {
     console.error(err);
     if (requestToken === summaryRequestToken) {
-      renderSummaryPanel(article, { state: "error", message: err.message });
+      renderSummaryPanel({ state: "error", message: err.message });
     }
   }
 }
@@ -499,23 +499,21 @@ async function fetchClaudeSummary(article, apiKey) {
   return text || "(No summary returned.)";
 }
 
-function renderSummaryPanel(article, status) {
-  const titleHtml = `<h3>${escapeHtml(article.title)}</h3>`;
-
+function renderSummaryPanel(status) {
   if (status.state === "no-key") {
     els.summaryPanel.innerHTML =
-      titleHtml + '<p class="summary-loading">Add a Claude API key in the sidebar to enable AI summaries.</p>';
+      '<p class="summary-loading">Add a Claude API key in the sidebar to enable AI summaries.</p>';
     return;
   }
 
   if (status.state === "loading") {
-    els.summaryPanel.innerHTML = titleHtml + '<p class="summary-loading">Generating summary...</p>';
+    els.summaryPanel.innerHTML = '<p class="summary-loading">Generating summary...</p>';
     return;
   }
 
   if (status.state === "error") {
     els.summaryPanel.innerHTML =
-      titleHtml + `<p class="summary-error">Couldn't generate summary: ${escapeHtml(status.message)}</p>`;
+      `<p class="summary-error">Couldn't generate summary: ${escapeHtml(status.message)}</p>`;
     return;
   }
 
@@ -524,9 +522,7 @@ function renderSummaryPanel(article, status) {
     .map((line) => line.replace(/^[\s*-]+/, "").trim())
     .filter(Boolean);
 
-  const bodyHtml = bullets.length
+  els.summaryPanel.innerHTML = bullets.length
     ? `<ul>${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`
     : `<p>${escapeHtml(status.text)}</p>`;
-
-  els.summaryPanel.innerHTML = titleHtml + bodyHtml;
 }
