@@ -86,6 +86,29 @@ header h1 {
   padding-left: 1.1rem;
 }
 
+.summary-panel .institution-match {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-panel .institution-match h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--highlight-border);
+}
+
+.summary-panel .institution-match ul {
+  padding-left: 1.1rem;
+}
+
+.summary-panel .institution-match li {
+  margin-bottom: 0.25rem;
+}
+
 .summary-panel .summary-loading {
   font-style: italic;
 }

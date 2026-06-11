@@ -360,8 +360,21 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
+function getInstitutionMatches(article, institution) {
+  const needle = (institution || "").trim().toLowerCase();
+  if (!needle) return [];
+
+  const matches = [];
+  article.authors.forEach((author, idx) => {
+    const matchedAffiliation = author.affiliations.find((aff) => aff.toLowerCase().includes(needle));
+    if (matchedAffiliation) {
+      matches.push({ idx, name: author.name || "Unknown author", affiliation: matchedAffiliation });
+    }
+  });
+  return matches;
+}
+
 function renderArticles() {
-  const institution = state.institution.trim().toLowerCase();
   els.results.innerHTML = "";
 
   if (currentArticles.length === 0) return;
@@ -369,14 +382,9 @@ function renderArticles() {
   const fragment = document.createDocumentFragment();
 
   currentArticles.forEach((article) => {
-    const matchedAuthorIndices = new Set();
-    if (institution) {
-      article.authors.forEach((author, idx) => {
-        const hit = author.affiliations.some((aff) => aff.toLowerCase().includes(institution));
-        if (hit) matchedAuthorIndices.add(idx);
-      });
-    }
-    const hasMatch = matchedAuthorIndices.size > 0;
+    const matches = getInstitutionMatches(article, state.institution);
+    const matchedIndices = new Set(matches.map((m) => m.idx));
+    const hasMatch = matches.length > 0;
 
     const card = document.createElement("article");
     card.className = "card" + (hasMatch ? " highlighted" : "");
@@ -387,14 +395,14 @@ function renderArticles() {
     const authorsHtml = article.authors
       .map((author, idx) => {
         const name = escapeHtml(author.name || "Unknown author");
-        return matchedAuthorIndices.has(idx)
+        return matchedIndices.has(idx)
           ? `<span class="author-match">${name}</span>`
           : name;
       })
       .join(", ");
 
     card.innerHTML = `
-      ${hasMatch ? `<div class="badge institution-badge">${escapeHtml(state.institution)} affiliation</div>` : ""}
+      ${hasMatch ? `<div class="badge institution-badge">${escapeHtml(state.institution.trim())} affiliation</div>` : ""}
       <h2 class="card-title">
         <a href="https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(article.pmid)}/" target="_blank" rel="noopener">
           ${escapeHtml(article.title)}
@@ -436,30 +444,32 @@ function resetSummaryPanel() {
 }
 
 async function showSummary(article) {
+  const institutionMatches = getInstitutionMatches(article, state.institution);
+
   const apiKey = els.claudeKeyInput.value.trim();
   if (!apiKey) {
-    renderSummaryPanel({ state: "no-key" });
+    renderSummaryPanel({ state: "no-key" }, institutionMatches);
     return;
   }
 
   if (summaryCache.has(article.pmid)) {
-    renderSummaryPanel({ state: "ready", text: summaryCache.get(article.pmid) });
+    renderSummaryPanel({ state: "ready", text: summaryCache.get(article.pmid) }, institutionMatches);
     return;
   }
 
   const requestToken = ++summaryRequestToken;
-  renderSummaryPanel({ state: "loading" });
+  renderSummaryPanel({ state: "loading" }, institutionMatches);
 
   try {
     const summary = await fetchClaudeSummary(article, apiKey);
     summaryCache.set(article.pmid, summary);
     if (requestToken === summaryRequestToken) {
-      renderSummaryPanel({ state: "ready", text: summary });
+      renderSummaryPanel({ state: "ready", text: summary }, institutionMatches);
     }
   } catch (err) {
     console.error(err);
     if (requestToken === summaryRequestToken) {
-      renderSummaryPanel({ state: "error", message: err.message });
+      renderSummaryPanel({ state: "error", message: err.message }, institutionMatches);
     }
   }
 }
@@ -499,21 +509,38 @@ async function fetchClaudeSummary(article, apiKey) {
   return text || "(No summary returned.)";
 }
 
-function renderSummaryPanel(status) {
+function renderInstitutionMatchHtml(institutionMatches) {
+  if (!institutionMatches || institutionMatches.length === 0) return "";
+
+  const items = institutionMatches
+    .map((m) => `<li><span class="author-match">${escapeHtml(m.name)}</span> - ${escapeHtml(m.affiliation)}</li>`)
+    .join("");
+
+  return `
+    <div class="institution-match">
+      <h4>${escapeHtml(state.institution.trim())} affiliation</h4>
+      <ul>${items}</ul>
+    </div>
+  `;
+}
+
+function renderSummaryPanel(status, institutionMatches) {
+  const matchHtml = renderInstitutionMatchHtml(institutionMatches);
+
   if (status.state === "no-key") {
     els.summaryPanel.innerHTML =
-      '<p class="summary-loading">Add a Claude API key in the sidebar to enable AI summaries.</p>';
+      matchHtml + '<p class="summary-loading">Add a Claude API key in the sidebar to enable AI summaries.</p>';
     return;
   }
 
   if (status.state === "loading") {
-    els.summaryPanel.innerHTML = '<p class="summary-loading">Generating summary...</p>';
+    els.summaryPanel.innerHTML = matchHtml + '<p class="summary-loading">Generating summary...</p>';
     return;
   }
 
   if (status.state === "error") {
     els.summaryPanel.innerHTML =
-      `<p class="summary-error">Couldn't generate summary: ${escapeHtml(status.message)}</p>`;
+      matchHtml + `<p class="summary-error">Couldn't generate summary: ${escapeHtml(status.message)}</p>`;
     return;
   }
 
@@ -522,7 +549,9 @@ function renderSummaryPanel(status) {
     .map((line) => line.replace(/^[\s*-]+/, "").trim())
     .filter(Boolean);
 
-  els.summaryPanel.innerHTML = bullets.length
+  const bodyHtml = bullets.length
     ? `<ul>${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`
     : `<p>${escapeHtml(status.text)}</p>`;
+
+  els.summaryPanel.innerHTML = matchHtml + bodyHtml;
 }
