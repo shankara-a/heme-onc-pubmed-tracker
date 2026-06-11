@@ -1,5 +1,7 @@
 # Heme/Onc PubMed Tracker
 
+**Live site:** https://shankara-a.github.io/heme-onc-pubmed-tracker/
+
 A static, client-side website that searches PubMed for recent hematology/oncology
 publications, ranks them, and highlights papers with authors from a chosen institution.
 No backend required — it calls the [NCBI E-utilities](https://www.ncbi.nlm.nih.gov/books/NBK25501/)
@@ -31,10 +33,10 @@ then visit `http://localhost:8000`.
 
 ## Deploying to GitHub Pages
 
-1. Push this folder to a GitHub repository.
-2. In the repo settings, go to **Pages** and set the source to the `main` branch
-   (root folder).
-3. Your site will be live at `https://<username>.github.io/<repo-name>/`.
+This repo is already configured: GitHub Pages serves from the `main` branch
+(root folder), live at https://shankara-a.github.io/heme-onc-pubmed-tracker/.
+Pushing to `main` redeploys automatically (takes a minute or two; hard-refresh
+to bypass cached CSS/JS).
 
 ## Customizing
 
