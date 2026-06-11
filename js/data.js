@@ -14,6 +14,14 @@
  * normalization (lowercase, periods stripped, whitespace collapsed),
  * and both the full journal title and the common ISO abbreviation
  * (as returned by PubMed) are included as keys where useful.
+ *
+ * JOURNAL_RANKS: a manually curated lookup of approximate SCImago
+ * Journal Rank (SJR) indicator values, keyed the same way as
+ * IMPACT_FACTORS. SJR weights citations by the prestige of the citing
+ * journal, so it sits on a different (lower) scale than impact factor
+ * and can rank journals differently - e.g. review-heavy journals tend
+ * to score relatively lower on SJR than on IF. This is the default
+ * sort metric; impact factor remains available as an alternative.
  */
 
 const DISEASES = {
@@ -271,4 +279,84 @@ const IMPACT_FACTORS = {
   "front immunol": 5.7,
   "transplantation and cellular therapy": 4.2,
   "transplant cell ther": 4.2
+};
+
+// Approximate SCImago Journal Rank (SJR) indicators (edit freely; keys
+// are normalized at lookup time via normalizeJournalName in app.js).
+const JOURNAL_RANKS = {
+  "new england journal of medicine": 19.7,
+  "n engl j med": 19.7,
+  "lancet": 18.4,
+  "lancet oncology": 9.6,
+  "lancet oncol": 9.6,
+  "lancet haematology": 5.4,
+  "lancet haematol": 5.4,
+  "nature": 17.7,
+  "nature medicine": 14.2,
+  "nat med": 14.2,
+  "nature reviews clinical oncology": 13.8,
+  "nat rev clin oncol": 13.8,
+  "journal of clinical oncology": 8.9,
+  "j clin oncol": 8.9,
+  "jama": 13.9,
+  "jama oncology": 8.5,
+  "jama oncol": 8.5,
+  "cancer cell": 14.6,
+  "cancer discovery": 12.8,
+  "cancer discov": 12.8,
+  "nature cancer": 9.4,
+  "nat cancer": 9.4,
+  "blood": 3.7,
+  "blood cancer journal": 2.0,
+  "blood cancer j": 2.0,
+  "blood advances": 1.6,
+  "blood adv": 1.6,
+  "leukemia": 3.2,
+  "leukemia & lymphoma": 0.9,
+  "leuk lymphoma": 0.9,
+  "journal of hematology & oncology": 3.8,
+  "j hematol oncol": 3.8,
+  "annals of oncology": 6.4,
+  "ann oncol": 6.4,
+  "haematologica": 2.3,
+  "british journal of haematology": 1.6,
+  "br j haematol": 1.6,
+  "american journal of hematology": 2.7,
+  "am j hematol": 2.7,
+  "bone marrow transplantation": 1.3,
+  "bone marrow transplant": 1.3,
+  "clinical cancer research": 4.8,
+  "clin cancer res": 4.8,
+  "cancer research": 5.3,
+  "cancer res": 5.3,
+  "european journal of cancer": 2.7,
+  "eur j cancer": 2.7,
+  "international journal of cancer": 2.3,
+  "int j cancer": 2.3,
+  "cancer": 2.1,
+  "hemasphere": 2.0,
+  "journal of the national cancer institute": 4.2,
+  "j natl cancer inst": 4.2,
+  "clinical lymphoma, myeloma and leukemia": 0.9,
+  "clin lymphoma myeloma leuk": 0.9,
+  "frontiers in oncology": 0.9,
+  "front oncol": 0.9,
+  "plos one": 0.8,
+  "cell": 19.0,
+  "scientific reports": 0.9,
+  "sci rep": 0.9,
+  "annals of hematology": 1.1,
+  "ann hematol": 1.1,
+  "npj precision oncology": 2.0,
+  "npj precis oncol": 2.0,
+  "therapeutic advances in hematology": 1.0,
+  "ther adv hematol": 1.0,
+  "journal of clinical medicine": 0.9,
+  "j clin med": 0.9,
+  "cancers": 1.1,
+  "cancers (basel)": 1.1,
+  "frontiers in immunology": 1.9,
+  "front immunol": 1.9,
+  "transplantation and cellular therapy": 1.4,
+  "transplant cell ther": 1.4
 };

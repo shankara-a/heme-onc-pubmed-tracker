@@ -12,8 +12,8 @@ API directly from the browser and runs entirely on GitHub Pages.
 - Toggle between **Hematology** and **Oncology** fields
 - Pick a disease "flag" (defaults to **Multiple Myeloma** under Hematology)
 - Filter by recency: last week (default), month, 3 months, 6 months, or year
-- Sort by **journal impact factor** (default, using a curated lookup table) or by
-  **publication date**
+- Sort by **SCImago Journal Rank** (default, using a curated lookup table), **journal
+  impact factor**, or **publication date**
 - Highlight publications with an author affiliated with a given institution
   (defaults to **Stanford**) — the matching author name is bolded and the card
   is flagged
@@ -43,14 +43,15 @@ to bypass cached CSS/JS).
 - **Diseases / search terms**: edit `js/data.js` → `DISEASES`. Each entry has a
   PubMed search `query` (MeSH heading + Title/Abstract synonyms). Add new
   diseases or tweak existing queries here.
-- **Journal impact factors**: edit `js/data.js` → `IMPACT_FACTORS`. This is a
-  manually curated lookup of approximate impact factors, since real-time JCR
-  data isn't available via a free API. Journal names are matched after
-  lowercasing and stripping periods, so add both the full journal title and its
-  PubMed ISO abbreviation (e.g. `"blood"` and `"blood"`, or
-  `"journal of clinical oncology"` and `"j clin oncol"`) if they differ.
-  Journals not in this table show "IF N/A" and sort to the bottom under the
-  impact-factor sort.
+- **Journal rankings**: edit `js/data.js` → `JOURNAL_RANKS` (SCImago Journal
+  Rank, the default sort) and `IMPACT_FACTORS` (impact factor, an alternative
+  sort). Both are manually curated lookups, since neither SJR nor JCR data is
+  available live via a free API. Journal names are matched after lowercasing
+  and stripping periods, so add both the full journal title and its PubMed ISO
+  abbreviation (e.g. `"blood"` and `"blood"`, or `"journal of clinical
+  oncology"` and `"j clin oncol"`) if they differ. Journals missing from a
+  table show "SJR N/A" / "IF N/A" and sort to the bottom under that metric's
+  sort.
 - **Default field/disease/time/sort/institution**: edit the `state` object at
   the top of `js/app.js`, and the corresponding `selected`/`value` attributes
   in `index.html`.
@@ -62,8 +63,8 @@ to bypass cached CSS/JS).
   often a temporary NCBI rate limit (3 requests/sec without an API key) — wait
   a moment or add a free [NCBI API key](https://www.ncbi.nlm.nih.gov/account/settings/)
   in the settings field.
-- **Impact factors are approximate** and manually maintained — update
-  `js/data.js` periodically (e.g. once a year when new JCR figures are
+- **SJR and impact factors are approximate** and manually maintained — update
+  `js/data.js` periodically (e.g. once a year when new SCImago/JCR figures are
   released).
 - Each search fetches up to 60 of the most recent matching articles
   (`RETMAX` in `js/app.js`).

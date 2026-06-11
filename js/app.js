@@ -17,7 +17,7 @@ let state = {
   diseaseId: "multiple-myeloma",
   customTerms: "",
   days: 7,
-  sortBy: "impact",
+  sortBy: "sjr",
   institution: "Stanford"
 };
 
@@ -265,8 +265,9 @@ function parseArticles(xmlText) {
       .join(" ");
 
     const impactFactor = lookupImpactFactor(journal);
+    const sjr = lookupSJR(journal);
 
-    return { pmid, title, journal, timestamp, dateDisplay, authors, abstract, impactFactor };
+    return { pmid, title, journal, timestamp, dateDisplay, authors, abstract, impactFactor, sjr };
   });
 }
 
@@ -324,14 +325,27 @@ function lookupImpactFactor(journalName) {
   return null;
 }
 
+function lookupSJR(journalName) {
+  const normalized = normalizeJournalName(journalName);
+  if (normalized in JOURNAL_RANKS) return JOURNAL_RANKS[normalized];
+  return null;
+}
+
 function sortArticles(articles, sortBy) {
   if (sortBy === "date") {
     articles.sort((a, b) => b.timestamp - a.timestamp);
-  } else {
+  } else if (sortBy === "impact") {
     articles.sort((a, b) => {
       const ifA = a.impactFactor === null ? -1 : a.impactFactor;
       const ifB = b.impactFactor === null ? -1 : b.impactFactor;
       if (ifB !== ifA) return ifB - ifA;
+      return b.timestamp - a.timestamp;
+    });
+  } else {
+    articles.sort((a, b) => {
+      const sjrA = a.sjr === null ? -1 : a.sjr;
+      const sjrB = b.sjr === null ? -1 : b.sjr;
+      if (sjrB !== sjrA) return sjrB - sjrA;
       return b.timestamp - a.timestamp;
     });
   }
@@ -367,6 +381,7 @@ function renderArticles() {
     const card = document.createElement("article");
     card.className = "card" + (hasMatch ? " highlighted" : "");
 
+    const sjrLabel = article.sjr !== null ? `SJR ${article.sjr.toFixed(1)}` : "SJR N/A";
     const ifLabel = article.impactFactor !== null ? `IF ${article.impactFactor.toFixed(1)}` : "IF N/A";
 
     const authorsHtml = article.authors
@@ -387,7 +402,8 @@ function renderArticles() {
       </h2>
       <div class="card-meta">
         <span class="journal">${escapeHtml(article.journal)}</span>
-        <span class="badge if-badge">${ifLabel}</span>
+        <span class="badge if-badge">${sjrLabel}</span>
+        <span class="badge if-badge secondary">${ifLabel}</span>
         <span class="date">${escapeHtml(article.dateDisplay)}</span>
       </div>
       <div class="authors">${authorsHtml || "No author information"}</div>
@@ -452,8 +468,10 @@ async function fetchClaudeSummary(article, apiKey) {
   const abstractText = article.abstract || "(No abstract available - summarize based on the title alone.)";
   const prompt =
     "Summarize this paper for a hematology/oncology clinician quickly scanning recent literature. " +
-    'Respond with 2-3 short markdown bullet points (each starting with "- ") covering the key finding(s) ' +
-    "and clinical relevance. Output only the bullet points, no preamble or closing remarks.\n\n" +
+    'Respond with 2-3 bullet points (each starting with "- "), each a single terse clause of roughly ' +
+    "8-12 words, covering the key finding(s) and clinical relevance. The title is already shown to the " +
+    "reader, so don't restate it or its main result - lead with the detail or implication. " +
+    "Output only the bullet points, no preamble or closing remarks.\n\n" +
     `Title: ${article.title}\nJournal: ${article.journal}\nAbstract: ${abstractText}`;
 
   const resp = await fetch(CLAUDE_API_URL, {
