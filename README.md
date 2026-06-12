@@ -9,14 +9,21 @@ API directly from the browser and runs entirely on GitHub Pages.
 
 ## Features
 
-- Toggle between **Hematology** and **Oncology** fields
-- Pick a disease "flag" (defaults to **Multiple Myeloma** under Hematology)
+- Toggle between **Hematology**, **Oncology**, and **Bioinformatics** fields
+- Pick a disease "flag" (defaults to **Multiple Myeloma** under Hematology).
+  The **Bioinformatics** field covers tools & software, DNA sequencing &
+  genomics, RNA sequencing & single-cell, proteomics & mass spectrometry, and
+  PTM mass spectrometry — searched without any heme/onc relevance filter, so
+  you see the latest methods advances across all disease areas
 - Filter by recency: last week (default), month, 3 months, 6 months, or year
 - Sort by **SCImago Journal Rank** (default, using a curated lookup table), **journal
   impact factor**, or **publication date**
 - Highlight publications with an author affiliated with a given institution
   (defaults to **Stanford**) — the matching author name is bolded and the card
   is flagged
+- A **GitHub** badge appears on any article whose abstract links to a public
+  GitHub repo (e.g. from a "Code availability" statement), linking directly
+  to that repo
 - Optional free-text "additional search terms" box to further narrow results
 - Optional NCBI API key field to raise the request rate limit
 

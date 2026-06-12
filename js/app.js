@@ -266,8 +266,9 @@ function parseArticles(xmlText) {
 
     const impactFactor = lookupImpactFactor(journal);
     const sjr = lookupSJR(journal);
+    const githubUrl = extractGithubUrl(abstract);
 
-    return { pmid, title, journal, timestamp, dateDisplay, authors, abstract, impactFactor, sjr };
+    return { pmid, title, journal, timestamp, dateDisplay, authors, abstract, impactFactor, sjr, githubUrl };
   });
 }
 
@@ -329,6 +330,13 @@ function lookupSJR(journalName) {
   const normalized = normalizeJournalName(journalName);
   if (normalized in JOURNAL_RANKS) return JOURNAL_RANKS[normalized];
   return null;
+}
+
+function extractGithubUrl(abstract) {
+  if (!abstract) return null;
+  const match = abstract.match(/https?:\/\/(?:www\.)?github\.com\/[^\s)]+/i);
+  if (!match) return null;
+  return match[0].replace(/[.,;:]+$/, "");
 }
 
 function sortArticles(articles, sortBy) {
@@ -413,6 +421,11 @@ function renderArticles() {
         <span class="badge if-badge">${sjrLabel}</span>
         <span class="badge if-badge secondary">${ifLabel}</span>
         <span class="date">${escapeHtml(article.dateDisplay)}</span>
+        ${article.githubUrl ? `
+          <a class="badge github-badge" href="${escapeHtml(article.githubUrl)}" target="_blank" rel="noopener">
+            GitHub ↗
+          </a>
+        ` : ""}
       </div>
       <div class="authors">${authorsHtml || "No author information"}</div>
       ${article.abstract ? `

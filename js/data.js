@@ -198,6 +198,48 @@ const DISEASES = {
       label: "Esophageal Cancer",
       query: '("Esophageal Neoplasms"[MeSH Terms] OR "esophageal cancer"[Title/Abstract])'
     }
+  ],
+  bioinformatics: [
+    {
+      id: "bio-tools",
+      label: "Bioinformatics Tools & Software",
+      query: '("software"[Title/Abstract] OR "tool"[Title/Abstract] OR "toolkit"[Title/Abstract] OR ' +
+        '"pipeline"[Title/Abstract] OR "framework"[Title/Abstract] OR "algorithm"[Title/Abstract]) AND ' +
+        '("Computational Biology"[MeSH Terms] OR "High-Throughput Nucleotide Sequencing"[MeSH Terms] OR ' +
+        '"genomics"[Title/Abstract] OR "bioinformatics"[Title/Abstract])'
+    },
+    {
+      id: "dna-seq",
+      label: "DNA Sequencing & Genomics",
+      query: '("High-Throughput Nucleotide Sequencing"[MeSH Terms] OR "Whole Genome Sequencing"[MeSH Terms] OR ' +
+        '"Exome Sequencing"[MeSH Terms] OR "whole genome sequencing"[Title/Abstract] OR ' +
+        '"whole exome sequencing"[Title/Abstract] OR "long-read sequencing"[Title/Abstract] OR ' +
+        '"nanopore sequencing"[Title/Abstract] OR "variant calling"[Title/Abstract] OR ' +
+        '"copy number variation"[Title/Abstract])'
+    },
+    {
+      id: "rna-seq",
+      label: "RNA Sequencing & Single-Cell",
+      query: '("Sequence Analysis, RNA"[MeSH Terms] OR "RNA-Seq"[Title/Abstract] OR ' +
+        '"RNA sequencing"[Title/Abstract] OR "single-cell RNA sequencing"[Title/Abstract] OR ' +
+        '"scRNA-seq"[Title/Abstract] OR "single-cell transcriptomics"[Title/Abstract] OR ' +
+        '"spatial transcriptomics"[Title/Abstract])'
+    },
+    {
+      id: "proteomics",
+      label: "Proteomics & Mass Spectrometry",
+      query: '("Proteomics"[MeSH Terms] OR "Mass Spectrometry"[MeSH Terms] OR "proteomics"[Title/Abstract] OR ' +
+        '"mass spectrometry"[Title/Abstract] OR "LC-MS/MS"[Title/Abstract] OR ' +
+        '"shotgun proteomics"[Title/Abstract])'
+    },
+    {
+      id: "ptm-ms",
+      label: "Post-Translational Modification (PTM-MS)",
+      query: '("Protein Processing, Post-Translational"[MeSH Terms] OR ' +
+        '"post-translational modification"[Title/Abstract] OR "phosphoproteomics"[Title/Abstract] OR ' +
+        '"ubiquitylome"[Title/Abstract] OR "glycoproteomics"[Title/Abstract] OR ' +
+        '"acetylome"[Title/Abstract]) AND ("Mass Spectrometry"[MeSH Terms] OR "mass spectrometry"[Title/Abstract])'
+    }
   ]
 };
 
@@ -278,7 +320,37 @@ const IMPACT_FACTORS = {
   "frontiers in immunology": 5.7,
   "front immunol": 5.7,
   "transplantation and cellular therapy": 4.2,
-  "transplant cell ther": 4.2
+  "transplant cell ther": 4.2,
+
+  // Bioinformatics / methods / proteomics journals
+  "nature methods": 36.1,
+  "nat methods": 36.1,
+  "nature biotechnology": 33.1,
+  "nat biotechnol": 33.1,
+  "nature communications": 14.7,
+  "nat commun": 14.7,
+  "genome biology": 12.3,
+  "genome biol": 12.3,
+  "nucleic acids research": 14.9,
+  "nucleic acids res": 14.9,
+  "briefings in bioinformatics": 9.5,
+  "brief bioinform": 9.5,
+  "genome medicine": 10.7,
+  "genome med": 10.7,
+  "genome research": 6.2,
+  "genome res": 6.2,
+  "cell systems": 7.0,
+  "cell reports methods": 6.0,
+  "gigascience": 8.0,
+  "bioinformatics": 4.4,
+  "bmc bioinformatics": 2.9,
+  "bmc genomics": 3.5,
+  "plos computational biology": 3.8,
+  "plos comput biol": 3.8,
+  "molecular & cellular proteomics": 4.8,
+  "mol cell proteomics": 4.8,
+  "journal of proteome research": 3.8,
+  "j proteome res": 3.8
 };
 
 // Approximate SCImago Journal Rank (SJR) indicators (edit freely; keys
@@ -358,5 +430,35 @@ const JOURNAL_RANKS = {
   "frontiers in immunology": 1.9,
   "front immunol": 1.9,
   "transplantation and cellular therapy": 1.4,
-  "transplant cell ther": 1.4
+  "transplant cell ther": 1.4,
+
+  // Bioinformatics / methods / proteomics journals
+  "nature methods": 14.0,
+  "nat methods": 14.0,
+  "nature biotechnology": 15.0,
+  "nat biotechnol": 15.0,
+  "nature communications": 6.0,
+  "nat commun": 6.0,
+  "genome biology": 6.5,
+  "genome biol": 6.5,
+  "nucleic acids research": 6.5,
+  "nucleic acids res": 6.5,
+  "briefings in bioinformatics": 4.5,
+  "brief bioinform": 4.5,
+  "genome medicine": 5.0,
+  "genome med": 5.0,
+  "genome research": 5.5,
+  "genome res": 5.5,
+  "cell systems": 3.5,
+  "cell reports methods": 3.0,
+  "gigascience": 3.0,
+  "bioinformatics": 2.8,
+  "bmc bioinformatics": 1.3,
+  "bmc genomics": 1.4,
+  "plos computational biology": 1.8,
+  "plos comput biol": 1.8,
+  "molecular & cellular proteomics": 2.2,
+  "mol cell proteomics": 2.2,
+  "journal of proteome research": 1.5,
+  "j proteome res": 1.5
 };

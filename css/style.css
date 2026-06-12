@@ -320,6 +320,17 @@ input[type="text"]:focus {
   border: 1px solid var(--border);
 }
 
+.github-badge {
+  background: #24292f;
+  color: #fff;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.github-badge:hover {
+  background: #000;
+}
+
 .institution-badge {
   position: absolute;
   top: -0.6rem;
