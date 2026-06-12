@@ -17,7 +17,7 @@ API directly from the browser and runs entirely on GitHub Pages.
   you see the latest methods advances across all disease areas
 - Filter by recency: last week (default), month, 3 months, 6 months, or year
 - Sort by **SCImago Journal Rank** (default, using a curated lookup table), **journal
-  impact factor**, or **publication date**
+  impact factor**, **citation count** (live from NIH iCite), or **publication date**
 - Highlight publications with an author affiliated with a given institution
   (defaults to **Stanford**) — the matching author name is bolded and the card
   is flagged
@@ -73,5 +73,8 @@ to bypass cached CSS/JS).
 - **SJR and impact factors are approximate** and manually maintained — update
   `js/data.js` periodically (e.g. once a year when new SCImago/JCR figures are
   released).
+- **Citation counts** come from the NIH [iCite](https://icite.od.nih.gov/) API
+  in a single batch request per search. Very recent papers may show "0
+  citations" or "N/A" simply because iCite hasn't indexed them yet.
 - Each search fetches up to 60 of the most recent matching articles
   (`RETMAX` in `js/app.js`).

@@ -1,6 +1,7 @@
 /* Heme/Onc PubMed Tracker - client-side app (no backend, calls NCBI E-utilities directly). */
 
 const EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/";
+const ICITE_BASE = "https://icite.od.nih.gov/api/pubs";
 const RETMAX = 60;
 
 const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
@@ -201,6 +202,7 @@ async function runSearch() {
     const xmlText = await efetchResp.text();
 
     currentArticles = parseArticles(xmlText);
+    await fetchCitationCounts(currentArticles);
     sortArticles(currentArticles, state.sortBy);
     renderArticles();
 
@@ -268,8 +270,27 @@ function parseArticles(xmlText) {
     const sjr = lookupSJR(journal);
     const githubUrl = extractGithubUrl(abstract);
 
-    return { pmid, title, journal, timestamp, dateDisplay, authors, abstract, impactFactor, sjr, githubUrl };
+    return { pmid, title, journal, timestamp, dateDisplay, authors, abstract, impactFactor, sjr, githubUrl, citationCount: null };
   });
+}
+
+async function fetchCitationCounts(articles) {
+  if (articles.length === 0) return;
+
+  try {
+    const pmids = articles.map((a) => a.pmid).join(",");
+    const resp = await fetch(`${ICITE_BASE}?pmids=${pmids}`);
+    if (!resp.ok) return;
+
+    const data = await resp.json();
+    const counts = new Map((data.data || []).map((d) => [String(d.pmid), d.citation_count]));
+    articles.forEach((a) => {
+      const count = counts.get(a.pmid);
+      a.citationCount = typeof count === "number" ? count : null;
+    });
+  } catch (e) {
+    /* citation counts are best-effort (iCite) - leave as null on failure */
+  }
 }
 
 function parsePubDate(articleNode) {
@@ -349,6 +370,13 @@ function sortArticles(articles, sortBy) {
       if (ifB !== ifA) return ifB - ifA;
       return b.timestamp - a.timestamp;
     });
+  } else if (sortBy === "citations") {
+    articles.sort((a, b) => {
+      const cA = a.citationCount === null ? -1 : a.citationCount;
+      const cB = b.citationCount === null ? -1 : b.citationCount;
+      if (cB !== cA) return cB - cA;
+      return b.timestamp - a.timestamp;
+    });
   } else {
     articles.sort((a, b) => {
       const sjrA = a.sjr === null ? -1 : a.sjr;
@@ -399,6 +427,9 @@ function renderArticles() {
 
     const sjrLabel = article.sjr !== null ? `SJR ${article.sjr.toFixed(1)}` : "SJR N/A";
     const ifLabel = article.impactFactor !== null ? `IF ${article.impactFactor.toFixed(1)}` : "IF N/A";
+    const citationsLabel = article.citationCount !== null
+      ? `${article.citationCount} citation${article.citationCount === 1 ? "" : "s"}`
+      : "Citations N/A";
 
     const authorsHtml = article.authors
       .map((author, idx) => {
@@ -420,6 +451,7 @@ function renderArticles() {
         <span class="journal">${escapeHtml(article.journal)}</span>
         <span class="badge if-badge">${sjrLabel}</span>
         <span class="badge if-badge secondary">${ifLabel}</span>
+        <span class="badge if-badge secondary">${citationsLabel}</span>
         <span class="date">${escapeHtml(article.dateDisplay)}</span>
         ${article.githubUrl ? `
           <a class="badge github-badge" href="${escapeHtml(article.githubUrl)}" target="_blank" rel="noopener">

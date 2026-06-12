@@ -176,25 +176,27 @@ input[type="text"]:focus {
 }
 
 .toggle {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .toggle-btn {
-  flex: 1;
-  padding: 0.5rem 0.6rem;
+  padding: 0.5rem 0.4rem;
   border: none;
   background: var(--panel-bg);
   color: var(--text);
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   transition: background 0.15s, color 0.15s;
 }
 
-.toggle-btn + .toggle-btn {
-  border-left: 1px solid var(--border);
+.toggle-btn:nth-child(3) {
+  grid-column: 1 / -1;
 }
 
 .toggle-btn.active {
