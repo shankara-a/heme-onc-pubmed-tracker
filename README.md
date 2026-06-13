@@ -30,8 +30,13 @@ API directly from the browser and runs entirely on GitHub Pages.
 - **Generate Digest**: summarizes the publications currently on screen into a
   1-2 paragraph AI-written digest (via Claude Sonnet), with inline `[N]`
   citations linking straight to the relevant PubMed page and a "Sources" list
-  below. From the digest view you can **copy** the digest as plain text (with
-  source links) or **email it to yourself** via your default mail client
+  below. The digest header shows the actual date range covered (e.g. "Jun 5 –
+  Jun 12, 2026") instead of a generic "last week" label. From the digest view
+  you can **copy** the digest as plain text (with source links) or **email it
+  to yourself** via your default mail client
+- **Recent digests**: the last 3 generated digests are saved (in your
+  browser's local storage) and shown in a floating panel in the bottom-right
+  corner. Click one to instantly re-open that digest without regenerating it.
 - Optional free-text "additional search terms" box to further narrow results
 - Optional NCBI API key field to raise the request rate limit
 

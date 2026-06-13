@@ -9,13 +9,10 @@ const CLAUDE_MODEL = "claude-haiku-4-5-20251001";
 const CLAUDE_DIGEST_MODEL = "claude-sonnet-4-6";
 const SUMMARY_HOVER_DELAY = 500;
 
-const TIME_LABELS = {
-  7: "the last week",
-  30: "the last month",
-  90: "the last 3 months",
-  180: "the last 6 months",
-  365: "the last year"
-};
+const DIGEST_HISTORY_KEY = "hemeOncDigestHistory";
+const DIGEST_HISTORY_MAX = 3;
+
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const MONTH_MAP = {
   jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
@@ -33,6 +30,7 @@ let state = {
 
 let currentArticles = [];
 let digestPlainText = "";
+let digestHistory = [];
 
 const summaryCache = new Map();
 let summaryHoverTimer = null;
@@ -45,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
   populateDiseaseSelect();
   bindEvents();
   loadSettingsFromStorage();
+  loadDigestHistory();
   runSearch();
 });
 
@@ -71,6 +70,9 @@ function cacheElements() {
   els.digestCopyBtn = document.getElementById("digest-copy-btn");
   els.digestEmailInput = document.getElementById("digest-email-input");
   els.digestEmailBtn = document.getElementById("digest-email-btn");
+
+  els.digestHistory = document.getElementById("digest-history");
+  els.digestHistoryList = document.getElementById("digest-history-list");
 }
 
 function bindEvents() {
@@ -146,6 +148,13 @@ function bindEvents() {
     const subject = `Research Digest: ${els.digestMeta.textContent}`;
     const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(digestPlainText)}`;
     window.location.href = mailtoUrl;
+  });
+
+  els.digestHistoryList.addEventListener("click", (e) => {
+    const btn = e.target.closest(".digest-history-item");
+    if (!btn) return;
+    const entry = digestHistory[parseInt(btn.dataset.index, 10)];
+    if (entry) restoreDigest(entry);
   });
 }
 
@@ -682,12 +691,25 @@ function hideDigestPanel() {
   els.results.hidden = false;
 }
 
+function formatDateRange(days) {
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - days);
+
+  const formatDay = (d) => `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+
+  if (start.getFullYear() === end.getFullYear()) {
+    return `${formatDay(start)} – ${formatDay(end)}, ${end.getFullYear()}`;
+  }
+  return `${formatDay(start)}, ${start.getFullYear()} – ${formatDay(end)}, ${end.getFullYear()}`;
+}
+
 function buildDigestMeta() {
   const fieldLabel = state.field.charAt(0).toUpperCase() + state.field.slice(1);
   const disease = getDisease();
-  const timeLabel = TIME_LABELS[state.days] || `the last ${state.days} days`;
+  const dateRange = formatDateRange(state.days);
   const count = currentArticles.length;
-  return `${fieldLabel} – ${disease.label} – ${timeLabel} – ${count} publication${count === 1 ? "" : "s"}`;
+  return `${fieldLabel} – ${disease.label} – ${dateRange} – ${count} publication${count === 1 ? "" : "s"}`;
 }
 
 function pubmedUrl(pmid) {
@@ -815,13 +837,81 @@ async function generateDigest() {
   try {
     const text = await fetchDigest(currentArticles, apiKey);
     const citedIndices = extractCitedIndices(text);
-    els.digestContent.innerHTML = renderDigestHtml(text, currentArticles, citedIndices);
+    const contentHtml = renderDigestHtml(text, currentArticles, citedIndices);
+    els.digestContent.innerHTML = contentHtml;
     digestPlainText = buildDigestPlainText(text, currentArticles, citedIndices, els.digestMeta.textContent);
     els.digestActions.hidden = false;
+    saveDigestToHistory({
+      meta: els.digestMeta.textContent,
+      contentHtml,
+      plainText: digestPlainText,
+      timestamp: Date.now()
+    });
   } catch (err) {
     console.error(err);
     els.digestContent.innerHTML = `<p class="digest-error">Couldn't generate digest: ${escapeHtml(err.message)}</p>`;
   } finally {
     els.digestBtn.disabled = false;
   }
+}
+
+function loadDigestHistory() {
+  try {
+    const raw = localStorage.getItem(DIGEST_HISTORY_KEY);
+    digestHistory = raw ? JSON.parse(raw) : [];
+  } catch {
+    digestHistory = [];
+  }
+  renderDigestHistory();
+}
+
+function saveDigestToHistory(entry) {
+  digestHistory.unshift(entry);
+  digestHistory = digestHistory.slice(0, DIGEST_HISTORY_MAX);
+  try {
+    localStorage.setItem(DIGEST_HISTORY_KEY, JSON.stringify(digestHistory));
+  } catch {
+    /* localStorage unavailable or quota exceeded - history just won't persist */
+  }
+  renderDigestHistory();
+}
+
+function timeAgo(timestamp) {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function renderDigestHistory() {
+  if (digestHistory.length === 0) {
+    els.digestHistory.hidden = true;
+    return;
+  }
+
+  els.digestHistory.hidden = false;
+  els.digestHistoryList.innerHTML = digestHistory
+    .map(
+      (entry, idx) => `
+        <li>
+          <button class="digest-history-item" data-index="${idx}">
+            <span class="digest-history-meta">${escapeHtml(entry.meta)}</span>
+            <span class="digest-history-time">${timeAgo(entry.timestamp)}</span>
+          </button>
+        </li>
+      `
+    )
+    .join("");
+}
+
+function restoreDigest(entry) {
+  els.digestMeta.textContent = entry.meta;
+  els.digestContent.innerHTML = entry.contentHtml;
+  digestPlainText = entry.plainText;
+  els.digestActions.hidden = false;
+  showDigestPanel();
 }
