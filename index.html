@@ -72,12 +72,27 @@
         </div>
 
         <button id="search-btn" class="primary-btn">Search PubMed</button>
+        <button id="digest-btn" class="secondary-btn">Generate Digest</button>
       </section>
     </aside>
 
     <main class="results-panel">
       <section id="status" class="status"></section>
       <section id="results" class="results"></section>
+
+      <section id="digest-panel" class="digest-panel" hidden>
+        <button id="digest-back-btn" class="link-btn">&larr; Back to results</button>
+        <h2>Research Digest</h2>
+        <p id="digest-meta" class="digest-meta"></p>
+        <div id="digest-content" class="digest-content"></div>
+        <div id="digest-actions" class="digest-actions" hidden>
+          <button id="digest-copy-btn" class="secondary-btn">Copy digest</button>
+          <div class="digest-email">
+            <input type="email" id="digest-email-input" placeholder="you@example.com" />
+            <button id="digest-email-btn" class="secondary-btn">Email digest</button>
+          </div>
+        </div>
+      </section>
     </main>
 
     <aside class="summary-panel" id="summary-panel">

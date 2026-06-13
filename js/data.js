@@ -110,6 +110,14 @@ const DISEASES = {
       id: "hemophilia",
       label: "Hemophilia",
       query: '("Hemophilia A"[MeSH Terms] OR "Hemophilia B"[MeSH Terms] OR "hemophilia"[Title/Abstract])'
+    },
+    {
+      id: "dvt-pe",
+      label: "DVT / PE (VTE)",
+      query: '("Venous Thromboembolism"[MeSH Terms] OR "Pulmonary Embolism"[MeSH Terms] OR ' +
+        '"Venous Thrombosis"[MeSH Terms] OR "deep vein thrombosis"[Title/Abstract] OR ' +
+        '"pulmonary embolism"[Title/Abstract] OR "venous thromboembolism"[Title/Abstract] OR ' +
+        '"DVT"[Title/Abstract] OR "VTE"[Title/Abstract])'
     }
   ],
   oncology: [
@@ -350,7 +358,15 @@ const IMPACT_FACTORS = {
   "molecular & cellular proteomics": 4.8,
   "mol cell proteomics": 4.8,
   "journal of proteome research": 3.8,
-  "j proteome res": 3.8
+  "j proteome res": 3.8,
+
+  // Thrombosis / VTE journals
+  "journal of thrombosis and haemostasis": 5.8,
+  "j thromb haemost": 5.8,
+  "thrombosis research": 3.7,
+  "thromb res": 3.7,
+  "research and practice in thrombosis and haemostasis": 2.8,
+  "res pract thromb haemost": 2.8
 };
 
 // Approximate SCImago Journal Rank (SJR) indicators (edit freely; keys
@@ -460,5 +476,13 @@ const JOURNAL_RANKS = {
   "molecular & cellular proteomics": 2.2,
   "mol cell proteomics": 2.2,
   "journal of proteome research": 1.5,
-  "j proteome res": 1.5
+  "j proteome res": 1.5,
+
+  // Thrombosis / VTE journals
+  "journal of thrombosis and haemostasis": 1.7,
+  "j thromb haemost": 1.7,
+  "thrombosis research": 1.0,
+  "thromb res": 1.0,
+  "research and practice in thrombosis and haemostasis": 0.9,
+  "res pract thromb haemost": 0.9
 };

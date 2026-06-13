@@ -10,11 +10,14 @@ API directly from the browser and runs entirely on GitHub Pages.
 ## Features
 
 - Toggle between **Hematology**, **Oncology**, and **Bioinformatics** fields
-- Pick a disease "flag" (defaults to **Multiple Myeloma** under Hematology).
-  The **Bioinformatics** field covers tools & software, DNA sequencing &
-  genomics, RNA sequencing & single-cell, proteomics & mass spectrometry, and
+- Pick a disease "flag" (defaults to **Multiple Myeloma** under Hematology),
+  including a **DVT / PE (VTE)** option, or choose **All Diseases** to search
+  every disease in the current field at once (useful for the digest feature
+  below). The **Bioinformatics** field covers tools & software, DNA sequencing
+  & genomics, RNA sequencing & single-cell, proteomics & mass spectrometry, and
   PTM mass spectrometry — searched without any heme/onc relevance filter, so
-  you see the latest methods advances across all disease areas
+  you see the latest methods advances across all disease areas (with its own
+  **All Categories** option)
 - Filter by recency: last week (default), month, 3 months, 6 months, or year
 - Sort by **SCImago Journal Rank** (default, using a curated lookup table), **journal
   impact factor**, **citation count** (live from NIH iCite), or **publication date**
@@ -24,6 +27,11 @@ API directly from the browser and runs entirely on GitHub Pages.
 - A **GitHub** badge appears on any article whose abstract links to a public
   GitHub repo (e.g. from a "Code availability" statement), linking directly
   to that repo
+- **Generate Digest**: summarizes the publications currently on screen into a
+  1-2 paragraph AI-written digest (via Claude Sonnet), with inline `[N]`
+  citations linking straight to the relevant PubMed page and a "Sources" list
+  below. From the digest view you can **copy** the digest as plain text (with
+  source links) or **email it to yourself** via your default mail client
 - Optional free-text "additional search terms" box to further narrow results
 - Optional NCBI API key field to raise the request rate limit
 
@@ -76,5 +84,10 @@ to bypass cached CSS/JS).
 - **Citation counts** come from the NIH [iCite](https://icite.od.nih.gov/) API
   in a single batch request per search. Very recent papers may show "0
   citations" or "N/A" simply because iCite hasn't indexed them yet.
+- **Generate Digest** requires a Claude API key (same one used for hover
+  summaries) and uses `claude-sonnet-4-6` for higher-quality synthesis. The
+  "Email digest" button opens a `mailto:` link with no server in between, so
+  very long digests could be truncated by some mail clients — use "Copy
+  digest" for the full text if that happens.
 - Each search fetches up to 60 of the most recent matching articles
   (`RETMAX` in `js/app.js`).

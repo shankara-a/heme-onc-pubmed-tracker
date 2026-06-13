@@ -226,6 +226,43 @@ input[type="text"]:focus {
   cursor: default;
 }
 
+.secondary-btn {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: var(--badge-bg);
+}
+
+.secondary-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
 .status {
   min-height: 1.5rem;
   margin-bottom: 1rem;
@@ -246,6 +283,10 @@ input[type="text"]:focus {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.results[hidden] {
+  display: none;
 }
 
 .card {
@@ -369,6 +410,96 @@ input[type="text"]:focus {
 .abstract p {
   margin: 0.5rem 0 0;
   color: var(--text);
+}
+
+.digest-panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.digest-panel h2 {
+  margin: 0 0 0.5rem;
+}
+
+.digest-meta {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.digest-content p {
+  margin: 0 0 1rem;
+  line-height: 1.6;
+}
+
+.digest-content a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.digest-content a:hover {
+  text-decoration: underline;
+}
+
+.digest-content .digest-sources {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.digest-content .digest-sources h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.digest-content .digest-sources ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.digest-content .digest-sources li {
+  margin-bottom: 0.35rem;
+}
+
+.digest-loading,
+.digest-error {
+  font-style: italic;
+  color: var(--muted);
+}
+
+.digest-error {
+  color: #b91c1c;
+  font-style: normal;
+}
+
+.digest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.digest-actions .secondary-btn {
+  width: auto;
+}
+
+.digest-email {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.digest-email input[type="email"] {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
 }
 
 footer {

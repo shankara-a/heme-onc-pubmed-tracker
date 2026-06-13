@@ -6,7 +6,16 @@ const RETMAX = 60;
 
 const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
 const CLAUDE_MODEL = "claude-haiku-4-5-20251001";
+const CLAUDE_DIGEST_MODEL = "claude-sonnet-4-6";
 const SUMMARY_HOVER_DELAY = 500;
+
+const TIME_LABELS = {
+  7: "the last week",
+  30: "the last month",
+  90: "the last 3 months",
+  180: "the last 6 months",
+  365: "the last year"
+};
 
 const MONTH_MAP = {
   jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
@@ -23,6 +32,7 @@ let state = {
 };
 
 let currentArticles = [];
+let digestPlainText = "";
 
 const summaryCache = new Map();
 let summaryHoverTimer = null;
@@ -51,6 +61,16 @@ function cacheElements() {
   els.status = document.getElementById("status");
   els.results = document.getElementById("results");
   els.summaryPanel = document.getElementById("summary-panel");
+
+  els.digestBtn = document.getElementById("digest-btn");
+  els.digestPanel = document.getElementById("digest-panel");
+  els.digestBackBtn = document.getElementById("digest-back-btn");
+  els.digestMeta = document.getElementById("digest-meta");
+  els.digestContent = document.getElementById("digest-content");
+  els.digestActions = document.getElementById("digest-actions");
+  els.digestCopyBtn = document.getElementById("digest-copy-btn");
+  els.digestEmailInput = document.getElementById("digest-email-input");
+  els.digestEmailBtn = document.getElementById("digest-email-btn");
 }
 
 function bindEvents() {
@@ -104,11 +124,40 @@ function bindEvents() {
   });
 
   els.searchBtn.addEventListener("click", runSearch);
+
+  els.digestBtn.addEventListener("click", generateDigest);
+  els.digestBackBtn.addEventListener("click", hideDigestPanel);
+
+  els.digestCopyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(digestPlainText);
+      const original = els.digestCopyBtn.textContent;
+      els.digestCopyBtn.textContent = "Copied!";
+      setTimeout(() => {
+        els.digestCopyBtn.textContent = original;
+      }, 1500);
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
+  els.digestEmailBtn.addEventListener("click", () => {
+    const email = els.digestEmailInput.value.trim();
+    const subject = `Research Digest: ${els.digestMeta.textContent}`;
+    const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(digestPlainText)}`;
+    window.location.href = mailtoUrl;
+  });
 }
 
 function populateDiseaseSelect() {
   const diseases = DISEASES[state.field];
   els.diseaseSelect.innerHTML = "";
+
+  const allOpt = document.createElement("option");
+  allOpt.value = "all";
+  allOpt.textContent = state.field === "bioinformatics" ? "All Categories" : "All Diseases";
+  els.diseaseSelect.appendChild(allOpt);
+
   diseases.forEach((d) => {
     const opt = document.createElement("option");
     opt.value = d.id;
@@ -116,7 +165,7 @@ function populateDiseaseSelect() {
     els.diseaseSelect.appendChild(opt);
   });
 
-  const exists = diseases.some((d) => d.id === state.diseaseId);
+  const exists = state.diseaseId === "all" || diseases.some((d) => d.id === state.diseaseId);
   state.diseaseId = exists ? state.diseaseId : diseases[0].id;
   els.diseaseSelect.value = state.diseaseId;
 }
@@ -151,6 +200,11 @@ function saveSettingsToStorage() {
 }
 
 function getDisease() {
+  if (state.diseaseId === "all") {
+    const label = state.field === "bioinformatics" ? "All Categories" : "All Diseases";
+    const query = DISEASES[state.field].map((d) => `(${d.query})`).join(" OR ");
+    return { id: "all", label, query };
+  }
   return DISEASES[state.field].find((d) => d.id === state.diseaseId);
 }
 
@@ -172,16 +226,30 @@ async function runSearch() {
   setStatus("Searching PubMed...", "loading");
   els.results.innerHTML = "";
   els.searchBtn.disabled = true;
+  els.digestBtn.disabled = true;
+  hideDigestPanel();
   resetSummaryPanel();
 
   try {
     const term = buildSearchTerm();
-    const esearchUrl =
-      `${EUTILS_BASE}esearch.fcgi?db=pubmed&retmode=json&retmax=${RETMAX}` +
-      `&datetype=pdat&reldate=${state.days}&sort=pub_date` +
-      `&term=${encodeURIComponent(term)}${apiKeyParam()}`;
+    const esearchParams = new URLSearchParams({
+      db: "pubmed",
+      retmode: "json",
+      retmax: String(RETMAX),
+      datetype: "pdat",
+      reldate: String(state.days),
+      sort: "pub_date",
+      term
+    });
+    const apiKey = els.apiKeyInput.value.trim();
+    if (apiKey) esearchParams.set("api_key", apiKey);
 
-    const esearchResp = await fetch(esearchUrl);
+    // POST avoids URL-length limits when "All Diseases" combines many queries.
+    const esearchResp = await fetch(`${EUTILS_BASE}esearch.fcgi`, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: esearchParams.toString()
+    });
     if (!esearchResp.ok) throw new Error(`esearch failed (HTTP ${esearchResp.status})`);
     const esearchData = await esearchResp.json();
     const ids = esearchData?.esearchresult?.idlist || [];
@@ -220,6 +288,7 @@ async function runSearch() {
     );
   } finally {
     els.searchBtn.disabled = false;
+    els.digestBtn.disabled = false;
   }
 }
 
@@ -599,4 +668,160 @@ function renderSummaryPanel(status, institutionMatches) {
     : `<p>${escapeHtml(status.text)}</p>`;
 
   els.summaryPanel.innerHTML = matchHtml + bodyHtml;
+}
+
+function showDigestPanel() {
+  els.status.hidden = true;
+  els.results.hidden = true;
+  els.digestPanel.hidden = false;
+}
+
+function hideDigestPanel() {
+  els.digestPanel.hidden = true;
+  els.status.hidden = false;
+  els.results.hidden = false;
+}
+
+function buildDigestMeta() {
+  const fieldLabel = state.field.charAt(0).toUpperCase() + state.field.slice(1);
+  const disease = getDisease();
+  const timeLabel = TIME_LABELS[state.days] || `the last ${state.days} days`;
+  const count = currentArticles.length;
+  return `${fieldLabel} – ${disease.label} – ${timeLabel} – ${count} publication${count === 1 ? "" : "s"}`;
+}
+
+function pubmedUrl(pmid) {
+  return `https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(pmid)}/`;
+}
+
+function buildDigestPrompt(articles) {
+  const list = articles
+    .map((a, idx) => {
+      const sjr = a.sjr !== null ? `SJR ${a.sjr.toFixed(1)}` : "SJR N/A";
+      const abstract = (a.abstract || "(No abstract available.)").slice(0, 500);
+      return `${idx + 1}. ${a.title} (${a.journal}, ${a.dateDisplay}, ${sjr})\n${abstract}`;
+    })
+    .join("\n\n");
+
+  return (
+    "You are writing a research digest for a hematology/oncology professional reviewing recent " +
+    "literature. Below is a numbered list of recent publications. Write a digest of 1-2 paragraphs " +
+    "(roughly 150-250 words total) highlighting the most significant findings, trends, and " +
+    "connections across these papers - focus on clinically or scientifically meaningful highlights, " +
+    'not routine or incremental updates. When you reference a specific paper, cite it using its ' +
+    'number in square brackets immediately after the relevant statement, e.g. "...showed improved ' +
+    'outcomes [3]." Use adjacent brackets for multi-paper citations, e.g. "[3][7]". Do not include a ' +
+    "references list or any heading - output only the narrative paragraph(s).\n\n" +
+    `Publications:\n${list}`
+  );
+}
+
+async function fetchDigest(articles, apiKey) {
+  const prompt = buildDigestPrompt(articles);
+
+  const resp = await fetch(CLAUDE_API_URL, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: CLAUDE_DIGEST_MODEL,
+      max_tokens: 700,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+
+  if (!resp.ok) {
+    const body = await resp.json().catch(() => null);
+    throw new Error(body?.error?.message || `HTTP ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  const text = data?.content?.[0]?.text?.trim();
+  return text || "(No digest returned.)";
+}
+
+function extractCitedIndices(text) {
+  const indices = new Set();
+  const regex = /\[(\d+)\]/g;
+  let m;
+  while ((m = regex.exec(text))) {
+    indices.add(parseInt(m[1], 10));
+  }
+  return Array.from(indices).sort((a, b) => a - b);
+}
+
+function renderDigestHtml(text, articles, citedIndices) {
+  const linked = escapeHtml(text).replace(/\[(\d+)\]/g, (match, numStr) => {
+    const article = articles[parseInt(numStr, 10) - 1];
+    if (!article) return match;
+    return `<a href="${pubmedUrl(article.pmid)}" target="_blank" rel="noopener">[${numStr}]</a>`;
+  });
+
+  const paragraphsHtml = linked
+    .split(/\n+/)
+    .filter((p) => p.trim())
+    .map((p) => `<p>${p}</p>`)
+    .join("");
+
+  const sourcesHtml = citedIndices
+    .map((num) => {
+      const a = articles[num - 1];
+      const title = `<a href="${pubmedUrl(a.pmid)}" target="_blank" rel="noopener">${escapeHtml(a.title)}</a>`;
+      return `<li>[${num}] ${title} <span class="journal">- ${escapeHtml(a.journal)}</span></li>`;
+    })
+    .join("");
+
+  return (
+    paragraphsHtml +
+    `<div class="digest-sources"><h3>Sources</h3><ol>${sourcesHtml}</ol></div>`
+  );
+}
+
+function buildDigestPlainText(text, articles, citedIndices, meta) {
+  const sources = citedIndices
+    .map((num) => {
+      const a = articles[num - 1];
+      return `${num}. ${a.title} (${a.journal}) - ${pubmedUrl(a.pmid)}`;
+    })
+    .join("\n");
+
+  return `${meta}\n\n${text}\n\nSources:\n${sources}`;
+}
+
+async function generateDigest() {
+  if (currentArticles.length === 0) {
+    setStatus("Run a search first to generate a digest.", "empty");
+    return;
+  }
+
+  showDigestPanel();
+  els.digestActions.hidden = true;
+  els.digestMeta.textContent = buildDigestMeta();
+
+  const apiKey = els.claudeKeyInput.value.trim();
+  if (!apiKey) {
+    els.digestContent.innerHTML =
+      '<p class="digest-error">Add a Claude API key in the sidebar to generate a digest.</p>';
+    return;
+  }
+
+  els.digestContent.innerHTML = '<p class="digest-loading">Generating digest...</p>';
+  els.digestBtn.disabled = true;
+
+  try {
+    const text = await fetchDigest(currentArticles, apiKey);
+    const citedIndices = extractCitedIndices(text);
+    els.digestContent.innerHTML = renderDigestHtml(text, currentArticles, citedIndices);
+    digestPlainText = buildDigestPlainText(text, currentArticles, citedIndices, els.digestMeta.textContent);
+    els.digestActions.hidden = false;
+  } catch (err) {
+    console.error(err);
+    els.digestContent.innerHTML = `<p class="digest-error">Couldn't generate digest: ${escapeHtml(err.message)}</p>`;
+  } finally {
+    els.digestBtn.disabled = false;
+  }
 }
