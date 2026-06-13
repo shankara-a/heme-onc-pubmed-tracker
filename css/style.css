@@ -413,6 +413,9 @@ input[type="text"]:focus {
 }
 
 .digest-panel {
+  /* matches .sidebar/.summary-panel margin-top, since #status/#results
+     (which the sidebar's offset accounts for) are hidden in this view */
+  margin-top: 2.5rem;
   background: var(--panel-bg);
   border: 1px solid var(--border);
   border-radius: 12px;
