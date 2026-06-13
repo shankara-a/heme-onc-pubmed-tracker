@@ -726,14 +726,14 @@ function buildDigestPrompt(articles) {
     .join("\n\n");
 
   return (
-    "You are writing a research digest for a hematology/oncology professional reviewing recent " +
-    "literature. Below is a numbered list of recent publications. Write a digest of 1-2 paragraphs " +
-    "(roughly 150-250 words total) highlighting the most significant findings, trends, and " +
-    "connections across these papers - focus on clinically or scientifically meaningful highlights, " +
-    'not routine or incremental updates. When you reference a specific paper, cite it using its ' +
-    'number in square brackets immediately after the relevant statement, e.g. "...showed improved ' +
-    'outcomes [3]." Use adjacent brackets for multi-paper citations, e.g. "[3][7]". Do not include a ' +
-    "references list or any heading - output only the narrative paragraph(s).\n\n" +
+    "You are writing a research digest for a scientist reviewing recent literature. Below is a " +
+    "numbered list of recent publications. Write a digest of 1-2 paragraphs (roughly 150-250 words " +
+    "total) highlighting the most significant findings, trends, and connections across these papers " +
+    "- focus on the most novel or impactful items, not routine or incremental updates. When you " +
+    'reference a specific paper, cite it using its number in square brackets immediately after the ' +
+    'relevant statement, e.g. "...showed improved outcomes [3]." Use adjacent brackets for ' +
+    'multi-paper citations, e.g. "[3][7]". Do not include a references list or any heading - output ' +
+    "only the narrative paragraph(s).\n\n" +
     `Publications:\n${list}`
   );
 }
